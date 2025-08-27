@@ -9,12 +9,13 @@
 #define TFT_DC 8
 #define TFT_RST 9
 #define TAMANHO_QRCODE 100
+#define QRCODE_VERSION 3
 
 Adafruit_ST7735 displayTFT = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 void showQRCode(const char *peso)
 {
-  displayTFT.fillScreen(ST77XX_WHITE); // Fundo branco
+  displayTFT.fillScreen(ST77XX_WHITE); 
 
   uint8_t qrcodeData[qrcode_getBufferSize(3)];
   QRCode qrcode;
@@ -39,36 +40,16 @@ void showQRCode(const char *peso)
   }
 }
 
-String get_peso(String pesoCoded)
+String getValue()
 {
-  String pesoTemp = "";
-  for (int i = 0; i < pesoCoded.length(); i++)
+  String data = Serial.readStringUntil('\r'); 
+  if (data.length() >= 8) 
   {
-    char caractere = pesoCoded.charAt(i);
-    if (caractere != ';')
-    {
-      pesoTemp += caractere;
-    }
+    String value = data.substring(1, 8); 
+    value.replace('.', ','); 
+    return value;
   }
-  String peso = pesoTemp.substring(1, 8);
-  return peso;
-}
-
-String cal_parceltool(String peso)
-{
-  String data = "N+";
-  data += peso;
-  data += String(char(0x0D));
-  data.replace('.', ','); // substituir ponto por virgula
-  return data;
-}
-
-String stProtocol_to_parcel()
-{
-  String pesoCoded = Serial.readStringUntil(0x0D);
-  String peso = get_peso(pesoCoded);
-  String parceltool = cal_parceltool(peso);
-  return parceltool;
+  return ""; 
 }
 
 void setup()
@@ -83,7 +64,7 @@ void loop()
 {
   if (Serial.available() > 0)
   {
-    String valor = stProtocol_to_parcel();
-    showQRCode(valor.c_str());
+    String data = getValue();
+    showQRCode(data.c_str());
   }
 }
